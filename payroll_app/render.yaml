@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: easypayroll
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: python run_production.py
+    envVars:
+      - key: PORT
+        value: 10000
+      - key: SECRET_KEY
+        generateValue: true
+      - key: THREADS
+        value: 8

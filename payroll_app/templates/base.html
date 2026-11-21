@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-50">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}EasyPayroll - Stress-Free Payroll Management{% endblock %}</title>
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='images/favicon.svg') }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='images/favicon.png') }}">
+    <link rel="alternate icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='images/logo.png') }}">
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0fdf4',
+                            100: '#dcfce7',
+                            200: '#bbf7d0',
+                            500: '#22c55e',
+                            600: '#16a34a',
+                            700: '#15803d',
+                            800: '#166534',
+                            900: '#14532d',
+                        },
+                        navy: {
+                            800: '#1e293b',
+                            900: '#0f172a',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}">
+</head>
+<body class="h-full flex flex-col text-slate-800 antialiased font-sans">
+
+    <!-- Top Navigation Bar -->
+    <nav class="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <!-- Brand / Logo -->
+                <div class="flex items-center space-x-3">
+                    <a href="{{ url_for('dashboard' if current_user else 'index') }}" class="flex items-center space-x-3 group">
+                        <img src="{{ url_for('static', filename='images/logo.svg') }}" alt="EasyPayroll Logo" class="w-10 h-10 object-contain drop-shadow-md group-hover:scale-105 transition-transform">
+                        <div class="flex flex-col">
+                            <span class="text-xl font-extrabold tracking-tight text-slate-900 leading-tight">
+                                Easy<span class="text-brand-600">Payroll</span>
+                            </span>
+                            <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest hidden sm:block">Automated Payroll</span>
+                        </div>
+                    </a>
+                    {% if current_user %}
+                    <a href="{{ url_for('settings') }}" title="Click to customize company details" class="hidden md:inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800 hover:bg-emerald-200 transition-colors">
+                        {% if current_user.logo_url %}
+                        <img src="{{ current_user.logo_url }}" class="w-3.5 h-3.5 rounded object-cover mr-1" alt="">
+                        {% else %}
+                        <i class="fa-solid fa-building mr-1"></i>
+                        {% endif %}
+                        <span>{{ current_user.company_name }}</span>
+                        <i class="fa-solid fa-pen text-[9px] ml-1.5 opacity-60"></i>
+                    </a>
+                    {% endif %}
+                </div>
+
+                <!-- Nav Links for Logged-In User -->
+                {% if current_user %}
+                <div class="hidden md:flex items-center space-x-1 lg:space-x-3">
+                    <a href="{{ url_for('dashboard') }}" class="px-3 py-2 rounded-lg text-sm font-medium transition-colors {% if request.endpoint == 'dashboard' %}bg-slate-100 text-brand-700 font-semibold{% else %}text-slate-600 hover:text-slate-900 hover:bg-slate-50{% endif %}">
+                        <i class="fa-solid fa-chart-pie mr-1.5 opacity-80"></i> Dashboard
+                    </a>
+                    <a href="{{ url_for('employees') }}" class="px-3 py-2 rounded-lg text-sm font-medium transition-colors {% if request.endpoint == 'employees' %}bg-slate-100 text-brand-700 font-semibold{% else %}text-slate-600 hover:text-slate-900 hover:bg-slate-50{% endif %}">
+                        <i class="fa-solid fa-users mr-1.5 opacity-80"></i> Employees
+                    </a>
+                    <a href="{{ url_for('attendance') }}" class="px-3 py-2 rounded-lg text-sm font-medium transition-colors {% if 'attendance' in request.endpoint %}bg-slate-100 text-brand-700 font-semibold{% else %}text-slate-600 hover:text-slate-900 hover:bg-slate-50{% endif %}">
+                        <i class="fa-solid fa-calendar-check mr-1.5 opacity-80"></i> Attendance
+                    </a>
+                    <a href="{{ url_for('leaves') }}" class="px-3 py-2 rounded-lg text-sm font-medium transition-colors {% if request.endpoint == 'leaves' %}bg-slate-100 text-brand-700 font-semibold{% else %}text-slate-600 hover:text-slate-900 hover:bg-slate-50{% endif %}">
+                        <i class="fa-solid fa-umbrella-beach mr-1.5 opacity-80"></i> Leaves
+                    </a>
+                    <a href="{{ url_for('payroll_list') }}" class="px-3 py-2 rounded-lg text-sm font-medium transition-colors {% if 'payroll' in request.endpoint %}bg-slate-100 text-brand-700 font-semibold{% else %}text-slate-600 hover:text-slate-900 hover:bg-slate-50{% endif %}">
+                        <i class="fa-solid fa-money-check-dollar mr-1.5 opacity-80"></i> Pay Runs
+                    </a>
+                    <a href="{{ url_for('settings') }}" class="px-3 py-2 rounded-lg text-sm font-medium transition-colors {% if request.endpoint == 'settings' %}bg-slate-100 text-brand-700 font-semibold{% else %}text-slate-600 hover:text-slate-900 hover:bg-slate-50{% endif %}">
+                        <i class="fa-solid fa-gear mr-1.5 opacity-80"></i> Settings
+                    </a>
+                </div>
+
+                <!-- Right Side User Menu -->
+                <div class="flex items-center space-x-3">
+                    <a href="{{ url_for('new_payroll') }}" class="hidden sm:inline-flex items-center px-3.5 py-2 text-xs md:text-sm font-semibold rounded-lg bg-brand-600 text-white hover:bg-brand-700 shadow-sm transition-all hover:shadow hover:-translate-y-0.5">
+                        <i class="fa-solid fa-play mr-1.5"></i> Run Payroll
+                    </a>
+
+                    <div class="relative flex items-center space-x-2 pl-2 border-l border-slate-200">
+                        <div class="w-8 h-8 rounded-full bg-slate-200 text-slate-700 flex items-center justify-center font-bold text-sm">
+                            {{ current_user.name[:1] | upper }}
+                        </div>
+                        <span class="hidden lg:inline text-sm font-medium text-slate-700">{{ current_user.name }}</span>
+                        <a href="{{ url_for('logout') }}" title="Sign Out" class="p-2 text-slate-400 hover:text-red-600 rounded-lg transition-colors">
+                            <i class="fa-solid fa-right-from-bracket"></i>
+                        </a>
+                    </div>
+                </div>
+                {% else %}
+                <div class="flex items-center space-x-3">
+                    <a href="{{ url_for('login') }}" class="px-4 py-2 text-sm font-medium text-slate-700 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors">
+                        Sign In
+                    </a>
+                    <a href="{{ url_for('signup') }}" class="px-4 py-2 text-sm font-semibold text-white bg-brand-600 hover:bg-brand-700 rounded-lg shadow-sm transition-all hover:shadow">
+                        Start Free
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Mobile Navigation Subbar (Visible only on mobile for logged in users) -->
+        {% if current_user %}
+        <div class="md:hidden border-t border-slate-200 bg-slate-50 px-2 py-2 flex justify-around text-[10px] font-medium">
+            <a href="{{ url_for('dashboard') }}" class="flex flex-col items-center py-1 {% if request.endpoint == 'dashboard' %}text-brand-600 font-bold{% else %}text-slate-600{% endif %}">
+                <i class="fa-solid fa-chart-pie mb-1"></i> Dash
+            </a>
+            <a href="{{ url_for('employees') }}" class="flex flex-col items-center py-1 {% if request.endpoint == 'employees' %}text-brand-600 font-bold{% else %}text-slate-600{% endif %}">
+                <i class="fa-solid fa-users mb-1"></i> Team
+            </a>
+            <a href="{{ url_for('attendance') }}" class="flex flex-col items-center py-1 {% if 'attendance' in request.endpoint %}text-brand-600 font-bold{% else %}text-slate-600{% endif %}">
+                <i class="fa-solid fa-calendar-check mb-1"></i> Attd
+            </a>
+            <a href="{{ url_for('leaves') }}" class="flex flex-col items-center py-1 {% if request.endpoint == 'leaves' %}text-brand-600 font-bold{% else %}text-slate-600{% endif %}">
+                <i class="fa-solid fa-umbrella-beach mb-1"></i> Leave
+            </a>
+            <a href="{{ url_for('payroll_list') }}" class="flex flex-col items-center py-1 {% if 'payroll' in request.endpoint %}text-brand-600 font-bold{% else %}text-slate-600{% endif %}">
+                <i class="fa-solid fa-money-check-dollar mb-1"></i> Payroll
+            </a>
+            <a href="{{ url_for('settings') }}" class="flex flex-col items-center py-1 {% if request.endpoint == 'settings' %}text-brand-600 font-bold{% else %}text-slate-600{% endif %}">
+                <i class="fa-solid fa-gear mb-1"></i> Config
+            </a>
+        </div>
+        {% endif %}
+    </nav>
+
+    <!-- Notification / Flash Messages -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4 w-full">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    {% set cat_colors = {
+                        'success': 'bg-emerald-50 border-emerald-300 text-emerald-800',
+                        'danger': 'bg-rose-50 border-rose-300 text-rose-800',
+                        'warning': 'bg-amber-50 border-amber-300 text-amber-800',
+                        'info': 'bg-sky-50 border-sky-300 text-sky-800'
+                    } %}
+                    <div class="mb-3 p-4 rounded-xl border flex items-center justify-between shadow-sm {{ cat_colors.get(category, 'bg-slate-50 border-slate-300 text-slate-800') }}" role="alert">
+                        <div class="flex items-center space-x-3">
+                            {% if category == 'success' %}
+                                <i class="fa-solid fa-circle-check text-emerald-600 text-lg"></i>
+                            {% elif category == 'danger' %}
+                                <i class="fa-solid fa-circle-exclamation text-rose-600 text-lg"></i>
+                            {% elif category == 'warning' %}
+                                <i class="fa-solid fa-triangle-exclamation text-amber-600 text-lg"></i>
+                            {% else %}
+                                <i class="fa-solid fa-circle-info text-sky-600 text-lg"></i>
+                            {% endif %}
+                            <span class="text-sm font-medium">{{ message }}</span>
+                        </div>
+                        <button onclick="this.parentElement.remove()" class="text-slate-400 hover:text-slate-600 p-1">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-slate-200 mt-auto py-6">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-3">
+            <div class="flex items-center space-x-2">
+                <img src="{{ url_for('static', filename='images/logo.svg') }}" alt="EasyPayroll" class="w-5 h-5 object-contain">
+                <span class="font-bold text-slate-800">EasyPayroll System</span>
+                <span>•</span>
+                <span>Free & Stress-Free Payroll for Modern Teams</span>
+            </div>
+            <div>
+                <span>Automated taxes, instant payslips & 1-click runs</span>
+            </div>
+        </div>
+    </footer>
+
+    {% block scripts %}{% endblock %}
+</body>
+</html>
