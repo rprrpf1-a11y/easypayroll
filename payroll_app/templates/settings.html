@@ -1,0 +1,172 @@
+{% extends "base.html" %}
+
+{% block title %}Company Settings - EasyPayroll{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto space-y-6">
+
+    <div class="bg-white p-6 sm:p-8 rounded-2xl border border-slate-200/80 shadow-sm">
+        <div class="flex items-center space-x-3 pb-6 border-b border-slate-100">
+            <div class="w-10 h-10 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center text-lg">
+                <i class="fa-solid fa-gear"></i>
+            </div>
+            <div>
+                <h1 class="text-xl font-bold text-slate-900">Company & Payroll Settings</h1>
+                <p class="text-xs text-slate-500">Configure default currency, tax withholding, and billing info</p>
+            </div>
+        </div>
+
+        <form method="POST" action="{{ url_for('settings') }}" class="mt-6 space-y-5">
+            <div>
+                <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Company / Organization Name</label>
+                <input type="text" name="company_name" value="{{ user.company_name }}" required
+                    class="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-brand-500">
+                <p class="text-[11px] text-slate-400 mt-1">This appears on official employee payslips and reports.</p>
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Company Logo (Optional)</label>
+                <div class="flex items-center space-x-3">
+                    <div class="w-12 h-12 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-center overflow-hidden flex-shrink-0">
+                        {% if user.logo_url %}
+                        <img src="{{ user.logo_url }}" alt="Logo" class="w-full h-full object-contain">
+                        {% else %}
+                        {% with logo_class="w-8 h-8" %}
+                        {% include "components/logo.html" %}
+                        {% endwith %}
+                        {% endif %}
+                    </div>
+                    <div class="flex-1">
+                        <input type="url" name="logo_url" value="{{ user.logo_url or '' }}" placeholder="https://example.com/logo.png"
+                            class="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-brand-500">
+                        <p class="text-[11px] text-slate-400 mt-1">URL of your company logo. Displayed on payslips and attendance statements.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Currency Symbol</label>
+                    <select name="currency" class="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 bg-white focus:outline-none focus:ring-2 focus:ring-brand-500 font-semibold text-slate-800">
+                        <option value="₹" {% if user.currency == '₹' or not user.currency %}selected{% endif %}>₹ (INR)</option>
+                        <option value="$" {% if user.currency == '$' %}selected{% endif %}>$ (USD / CAD / AUD)</option>
+                        <option value="€" {% if user.currency == '€' %}selected{% endif %}>€ (EUR)</option>
+                        <option value="£" {% if user.currency == '£' %}selected{% endif %}>£ (GBP)</option>
+                        <option value="AED " {% if user.currency == 'AED ' %}selected{% endif %}>AED (Dirham)</option>
+                        <option value="¥" {% if user.currency == '¥' %}selected{% endif %}>¥ (JPY / CNY)</option>
+                        <option value="C$" {% if user.currency == 'C$' %}selected{% endif %}>C$ (CAD)</option>
+                        <option value="A$" {% if user.currency == 'A$' %}selected{% endif %}>A$ (AUD)</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Default Tax Withholding (%)</label>
+                    <div class="relative">
+                        <input type="number" step="0.1" name="default_tax_rate" value="{{ user.default_tax_rate }}" required
+                            class="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-brand-500 pr-8">
+                        <span class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 text-xs">%</span>
+                    </div>
+                    <p class="text-[11px] text-slate-400 mt-1">Automatically applied during payroll generation.</p>
+                </div>
+            </div>
+
+            <!-- Customizable Salary Components (DA, House Rent, EPF, EPS) -->
+            <div class="pt-5 border-t border-slate-100">
+                <div class="flex items-center space-x-2 mb-3">
+                    <span class="w-6 h-6 rounded-lg bg-emerald-100 text-brand-700 flex items-center justify-center text-xs font-bold">
+                        <i class="fa-solid fa-calculator"></i>
+                    </span>
+                    <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider">Statutory Deductions & Allowances (DA, House Rent, EPF, EPS)</h3>
+                </div>
+                
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <!-- DA Rate -->
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Dearness Allowance (DA %)</label>
+                        <div class="relative">
+                            <input type="number" step="0.1" name="default_da_rate" value="{{ user.default_da_rate or 0.0 }}"
+                                class="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-brand-500 pr-8">
+                            <span class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 text-xs">%</span>
+                        </div>
+                        <p class="text-[10px] text-slate-400 mt-1">Calculated as % of Basic Salary.</p>
+                    </div>
+
+                    <!-- HRA Rate -->
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">House Rent Allowance (HRA %)</label>
+                        <div class="relative">
+                            <input type="number" step="0.1" name="default_hra_rate" value="{{ user.default_hra_rate or 0.0 }}"
+                                class="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-brand-500 pr-8">
+                            <span class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 text-xs">%</span>
+                        </div>
+                        <p class="text-[10px] text-slate-400 mt-1">Calculated as % of Basic Salary.</p>
+                    </div>
+
+                    <!-- EPF Deduction -->
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">EPF Deduction (Provident Fund %)</label>
+                        <div class="relative">
+                            <input type="number" step="0.1" name="default_epf_rate" value="{{ user.default_epf_rate if user.default_epf_rate is not none else 12.0 }}"
+                                class="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-brand-500 pr-8 font-semibold text-slate-800">
+                            <span class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 text-xs">%</span>
+                        </div>
+                        <p class="text-[10px] text-slate-400 mt-1">Standard 12% of (Basic + DA).</p>
+                    </div>
+
+                    <!-- EPS Deduction -->
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">EPS (Pension Scheme ₹ / month)</label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 text-xs">{{ user.currency }}</span>
+                            <input type="number" step="1" name="default_eps_rate" value="{{ user.default_eps_rate or 0.0 }}"
+                                class="w-full pl-7 pr-3 py-2 text-xs rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-brand-500 font-semibold text-slate-800">
+                        </div>
+                        <p class="text-[10px] text-slate-400 mt-1">Monthly pension deduction (e.g. ₹1,250 or custom).</p>
+                    </div>
+
+                    <!-- House Rent Deduction -->
+                    <div class="sm:col-span-2">
+                        <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">House Rent Deduction (Accommodation Recovery ₹)</label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 text-xs">{{ user.currency }}</span>
+                            <input type="number" step="1" name="default_house_rent" value="{{ user.default_house_rent or 0.0 }}"
+                                class="w-full pl-7 pr-3 py-2 text-xs rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-brand-500 font-semibold text-slate-800">
+                        </div>
+                        <p class="text-[10px] text-slate-400 mt-1">Fixed monthly rent deduction if housing is provided by company.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Business Address / Contact</label>
+                <textarea name="address" rows="3" placeholder="123 Business Avenue, Suite 400, New York, NY"
+                    class="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-brand-500">{{ user.address or '' }}</textarea>
+            </div>
+
+            <div class="pt-4 border-t border-slate-100 flex items-center justify-end">
+                <button type="submit" class="px-6 py-2.5 text-xs font-semibold rounded-xl bg-brand-600 hover:bg-brand-700 text-white shadow-md shadow-emerald-200 transition-all">
+                    Save Changes
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Data Safety & Backup Card -->
+    <div class="bg-white p-6 sm:p-8 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div class="flex items-center space-x-3.5">
+            <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-lg flex-shrink-0">
+                <i class="fa-solid fa-database"></i>
+            </div>
+            <div>
+                <h3 class="text-sm font-bold text-slate-900">Database & Payroll Backup</h3>
+                <p class="text-xs text-slate-500 mt-0.5">Download a complete, offline copy of your payroll, employee, and attendance database</p>
+            </div>
+        </div>
+        <a href="{{ url_for('download_backup') }}" class="px-4 py-2.5 text-xs font-semibold rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 shadow-sm transition-all flex items-center justify-center space-x-1.5 whitespace-nowrap">
+            <i class="fa-solid fa-cloud-arrow-down text-blue-600"></i>
+            <span>Download Backup (.db)</span>
+        </a>
+    </div>
+
+</div>
+{% endblock %}
