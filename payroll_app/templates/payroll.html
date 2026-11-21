@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+
+{% block title %}Payroll Runs - EasyPayroll{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+    <!-- Header & Action -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+            <h1 class="text-2xl font-bold text-slate-900">Payroll Runs</h1>
+            <p class="text-sm text-slate-500">History of all finalized pay periods and employee disbursements</p>
+        </div>
+        <div>
+            <a href="{{ url_for('new_payroll') }}" class="px-5 py-2.5 text-xs font-semibold rounded-xl bg-brand-600 hover:bg-brand-700 text-white shadow-md shadow-emerald-200 transition-all flex items-center space-x-1.5">
+                <i class="fa-solid fa-play text-xs"></i>
+                <span>Run New Payroll</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Payroll Runs List -->
+    <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-slate-50 border-b border-slate-200 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                        <th class="py-3.5 px-4">Pay Period & Title</th>
+                        <th class="py-3.5 px-4">Pay Date</th>
+                        <th class="py-3.5 px-4">Staff Count</th>
+                        <th class="py-3.5 px-4">Total Gross</th>
+                        <th class="py-3.5 px-4">Deductions</th>
+                        <th class="py-3.5 px-4">Net Payout</th>
+                        <th class="py-3.5 px-4">Status</th>
+                        <th class="py-3.5 px-4 text-right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 text-xs">
+                    {% if runs %}
+                        {% for run in runs %}
+                        <tr class="hover:bg-slate-50/70 transition-colors">
+                            <td class="py-3.5 px-4">
+                                <a href="{{ url_for('view_payroll', run_id=run.id) }}" class="font-bold text-slate-900 hover:text-brand-600 transition-colors">
+                                    {{ run.title }}
+                                </a>
+                                <div class="text-[11px] text-slate-400">
+                                    {% if run.pay_period_start and run.pay_period_end %}
+                                        {{ run.pay_period_start }} to {{ run.pay_period_end }}
+                                    {% else %}
+                                        Single Period
+                                    {% endif %}
+                                </div>
+                            </td>
+                            <td class="py-3.5 px-4 font-medium text-slate-600">
+                                <i class="fa-regular fa-calendar mr-1 opacity-70"></i> {{ run.pay_date }}
+                            </td>
+                            <td class="py-3.5 px-4 text-slate-700">
+                                <span class="font-semibold">{{ run.employee_count }}</span> employees
+                            </td>
+                            <td class="py-3.5 px-4 font-medium text-slate-700">
+                                {{ current_user.currency }}{{ "{:,.2f}".format(run.total_gross) }}
+                            </td>
+                            <td class="py-3.5 px-4 text-rose-600 font-medium">
+                                -{{ current_user.currency }}{{ "{:,.2f}".format(run.total_deductions) }}
+                            </td>
+                            <td class="py-3.5 px-4 font-bold text-emerald-700 text-sm">
+                                {{ current_user.currency }}{{ "{:,.2f}".format(run.total_net) }}
+                            </td>
+                            <td class="py-3.5 px-4">
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100 text-emerald-800">
+                                    <i class="fa-solid fa-check text-[9px] mr-1"></i> {{ run.status }}
+                                </span>
+                            </td>
+                            <td class="py-3.5 px-4 text-right">
+                                <div class="inline-flex items-center space-x-1.5">
+                                    <a href="{{ url_for('view_payroll', run_id=run.id) }}" class="px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-white hover:border-slate-300 transition-colors">
+                                        View Payslips
+                                    </a>
+                                    <a href="{{ url_for('export_payroll_csv', run_id=run.id) }}" class="p-1.5 rounded-lg border border-slate-200 text-xs text-slate-600 hover:bg-white hover:text-brand-600 transition-colors" title="Export CSV">
+                                        <i class="fa-solid fa-file-csv"></i>
+                                    </a>
+                                    <form method="POST" action="{{ url_for('delete_payroll', run_id=run.id) }}" onsubmit="return confirm('Are you sure you want to delete this payroll run?');" class="inline">
+                                        <button type="submit" class="p-1.5 rounded-lg border border-slate-200 text-xs text-slate-400 hover:text-rose-600 bg-white" title="Delete Run">
+                                            <i class="fa-solid fa-trash-can"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="8" class="py-12 text-center text-slate-500">
+                                <div class="w-12 h-12 rounded-xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto text-xl mb-3">
+                                    <i class="fa-solid fa-money-check-dollar"></i>
+                                </div>
+                                <p class="text-sm font-semibold text-slate-700">No payroll runs yet</p>
+                                <p class="text-xs text-slate-400 mt-1">Ready to process salaries? Click below to start.</p>
+                                <a href="{{ url_for('new_payroll') }}" class="mt-4 inline-flex items-center px-4 py-2 text-xs font-semibold rounded-xl bg-brand-600 hover:bg-brand-700 text-white shadow-sm transition-all">
+                                    <i class="fa-solid fa-play mr-1.5 text-[10px]"></i> Process First Payroll
+                                </a>
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

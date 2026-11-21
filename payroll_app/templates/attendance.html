@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+
+{% block title %}Daily Attendance - EasyPayroll{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+    <!-- Header & Quick Actions -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+            <h1 class="text-2xl font-bold text-slate-900">Attendance Tracker</h1>
+            <p class="text-sm text-slate-500">Log daily presence, work hours, and overtime effortlessly</p>
+        </div>
+        <div class="flex items-center space-x-2">
+            <a href="{{ url_for('attendance_summary') }}" class="px-3.5 py-2 text-xs font-semibold rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 transition-colors shadow-sm flex items-center space-x-1.5">
+                <i class="fa-solid fa-chart-column text-brand-600"></i>
+                <span>Monthly Summary & WhatsApp Reports</span>
+            </a>
+            <form method="POST" action="{{ url_for('attendance_quick_all_present') }}">
+                <input type="hidden" name="date" value="{{ selected_date }}">
+                <button type="submit" class="px-4 py-2 text-xs font-semibold rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition-all flex items-center space-x-1.5">
+                    <i class="fa-solid fa-check-double"></i>
+                    <span>Mark All Present</span>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Date Selector & Day Stats -->
+    <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
+        <form method="GET" action="{{ url_for('attendance') }}" class="flex items-center space-x-3 w-full md:w-auto">
+            <label class="text-xs font-bold text-slate-700 whitespace-nowrap">Selected Date:</label>
+            <input type="date" name="date" value="{{ selected_date }}" onchange="this.form.submit()"
+                class="px-3 py-1.5 text-xs rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-brand-500 font-semibold text-slate-800">
+            <button type="submit" class="px-3 py-1.5 text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition-colors">
+                Load Date
+            </button>
+        </form>
+
+        <!-- Mini Stats for Selected Date -->
+        <div class="flex items-center space-x-4 text-xs font-medium">
+            <div class="flex items-center space-x-1.5 px-3 py-1 rounded-lg bg-emerald-50 text-emerald-800">
+                <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                <span>Present: <strong>{{ present_cnt }}</strong></span>
+            </div>
+            <div class="flex items-center space-x-1.5 px-3 py-1 rounded-lg bg-amber-50 text-amber-800">
+                <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+                <span>Half-Day: <strong>{{ half_cnt }}</strong></span>
+            </div>
+            <div class="flex items-center space-x-1.5 px-3 py-1 rounded-lg bg-rose-50 text-rose-800">
+                <span class="w-2 h-2 rounded-full bg-rose-500"></span>
+                <span>Absent: <strong>{{ absent_cnt }}</strong></span>
+            </div>
+            <div class="flex items-center space-x-1.5 px-3 py-1 rounded-lg bg-blue-50 text-blue-800">
+                <span class="w-2 h-2 rounded-full bg-blue-500"></span>
+                <span>On Leave: <strong>{{ leave_cnt }}</strong></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Attendance Form / Table -->
+    <form method="POST" action="{{ url_for('attendance', date=selected_date) }}">
+        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-slate-50 border-b border-slate-200 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                            <th class="py-3 px-4">Employee</th>
+                            <th class="py-3 px-4">Department</th>
+                            <th class="py-3 px-4">Status</th>
+                            <th class="py-3 px-4">Clock In</th>
+                            <th class="py-3 px-4">Clock Out</th>
+                            <th class="py-3 px-4">Overtime (Hours)</th>
+                            <th class="py-3 px-4">Notes / Remarks</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 text-xs">
+                        {% if employees %}
+                            {% for emp in employees %}
+                            {% set rec = records_by_emp.get(emp.id, {}) %}
+                            <tr class="hover:bg-slate-50/70 transition-colors">
+                                <td class="py-3 px-4">
+                                    <input type="hidden" name="employee_ids" value="{{ emp.id }}">
+                                    <div class="font-bold text-slate-900">{{ emp.first_name }} {{ emp.last_name }}</div>
+                                    <div class="text-[11px] text-slate-400 font-mono">{{ emp.employee_code }}</div>
+                                </td>
+                                <td class="py-3 px-4">
+                                    <div class="text-slate-700">{{ emp.department or 'General' }}</div>
+                                    <div class="text-[11px] text-slate-400">{{ emp.designation }}</div>
+                                </td>
+                                <td class="py-3 px-4">
+                                    <select name="status_{{ emp.id }}"
+                                        class="px-2.5 py-1.5 rounded-xl border border-slate-300 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white">
+                                        <option value="Present" {% if rec.get('status', 'Present') == 'Present' %}selected{% endif %}>✅ Present</option>
+                                        <option value="Half Day" {% if rec.get('status') == 'Half Day' %}selected{% endif %}>🌓 Half Day</option>
+                                        <option value="Absent" {% if rec.get('status') == 'Absent' %}selected{% endif %}>❌ Absent (Unpaid)</option>
+                                        <option value="On Leave" {% if rec.get('status') == 'On Leave' %}selected{% endif %}>🏖️ On Leave</option>
+                                        <option value="Late" {% if rec.get('status') == 'Late' %}selected{% endif %}>⏰ Late</option>
+                                    </select>
+                                </td>
+                                <td class="py-3 px-4">
+                                    <input type="time" name="clock_in_{{ emp.id }}" value="{{ rec.get('clock_in', '09:00') }}"
+                                        class="px-2 py-1 rounded-lg border border-slate-200 text-xs focus:outline-none focus:ring-1 focus:ring-brand-500">
+                                </td>
+                                <td class="py-3 px-4">
+                                    <input type="time" name="clock_out_{{ emp.id }}" value="{{ rec.get('clock_out', '17:00') }}"
+                                        class="px-2 py-1 rounded-lg border border-slate-200 text-xs focus:outline-none focus:ring-1 focus:ring-brand-500">
+                                </td>
+                                <td class="py-3 px-4">
+                                    <div class="relative w-24">
+                                        <input type="number" step="0.5" name="ot_{{ emp.id }}" value="{{ rec.get('overtime_hours', 0.0) }}"
+                                            class="w-full px-2 py-1 pr-6 rounded-lg border border-slate-200 text-xs focus:outline-none focus:ring-1 focus:ring-brand-500">
+                                        <span class="absolute inset-y-0 right-0 pr-2 flex items-center text-slate-400 text-[10px]">hrs</span>
+                                    </div>
+                                </td>
+                                <td class="py-3 px-4">
+                                    <input type="text" name="notes_{{ emp.id }}" value="{{ rec.get('notes', '') }}" placeholder="Optional..."
+                                        class="w-full px-2.5 py-1 rounded-lg border border-slate-200 text-xs focus:outline-none focus:ring-1 focus:ring-brand-500">
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="7" class="py-10 text-center text-slate-500">
+                                    <p class="text-sm font-semibold">No active employees to track.</p>
+                                    <p class="text-xs text-slate-400 mt-1">Please add employees in the Employee Directory first.</p>
+                                </td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Save Bar -->
+            {% if employees %}
+            <div class="p-4 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
+                <span class="text-xs text-slate-500">Attendance automatically influences monthly salary calculations during payroll runs.</span>
+                <button type="submit" class="px-6 py-2.5 text-xs font-bold rounded-xl bg-brand-600 hover:bg-brand-700 text-white shadow-md shadow-emerald-200 transition-all flex items-center space-x-1.5">
+                    <i class="fa-solid fa-floppy-disk"></i>
+                    <span>Save Daily Attendance</span>
+                </button>
+            </div>
+            {% endif %}
+        </div>
+    </form>
+
+</div>
+{% endblock %}
